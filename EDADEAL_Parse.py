@@ -3,7 +3,6 @@ import sys
 import traceback
 from selenium import webdriver
 
-
 def auth_start():
 
     url_start_page = "https://edadeal.ru/tomsk/offers"
