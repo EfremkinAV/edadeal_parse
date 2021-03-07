@@ -1,4 +1,3 @@
-from typing import Any
 import re
 import sqlite3
 import sys
@@ -47,13 +46,32 @@ def db_delete_table(table_name):
     print("ТАБЛИЦА", table_name, "ОЧИЩЕНА!")
 
 
+def translit(city):
+    slovar = {'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e', 'ё': 'yo',
+              'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'i', 'к': 'k', 'л': 'l', 'м': 'm', 'н': 'n',
+              'о': 'o', 'п': 'p', 'р': 'r', 'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h',
+              'ц': 'c', 'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '', 'э': 'e',
+              'ю': 'u', 'я': 'ya', 'А': 'A', 'Б': 'B', 'В': 'V', 'Г': 'G', 'Д': 'D', 'Е': 'E', 'Ё': 'YO',
+              'Ж': 'ZH', 'З': 'Z', 'И': 'I', 'Й': 'I', 'К': 'K', 'Л': 'L', 'М': 'M', 'Н': 'N',
+              'О': 'O', 'П': 'P', 'Р': 'R', 'С': 'S', 'Т': 'T', 'У': 'U', 'Ф': 'F', 'Х': 'H',
+              'Ц': 'C', 'Ч': 'CH', 'Ш': 'SH', 'Щ': 'SCH', 'Ъ': '', 'Ы': 'y', 'Ь': '', 'Э': 'E',
+              'Ю': 'U', 'Я': 'YA'}
+    for key in slovar:
+        city = city.replace(key, slovar[key]).lower()
+    return city
+
+
 def parce_start():
-    url_start_page = "https://edadeal.ru/tomsk/offers"
+    city = translit(input("Введите город в котором хотите парсить скидки: "))
+    if city == '':
+        city = translit("Томск")
+        print("Город не выбран. По умолчанию парсим Томск")
+    url_start_page = "https://edadeal.ru/"+city+"/offers"
     driver = webdriver.Chrome()
     driver.maximize_window()
     driver.get(url_start_page)
     driver.implicitly_wait(5)
-    last_page = 2#int(driver.find_element_by_xpath("//div[9]/a[@class='b-button__root']").get_attribute('textContent'))
+    last_page = int(driver.find_element_by_xpath("//div[9]/a[@class='b-button__root']").get_attribute('textContent'))
     page_num = 1
     sqlite_connection = sqlite3.connect('edadeal_db.db')
     con = sqlite_connection.cursor()
@@ -81,8 +99,8 @@ def parce_start():
                 "title")
             g_add_date = datetime.now().date()
             try:
-                con.execute('INSERT INTO EDADEAL_GOODS (name,price_old,price_dis,market,add_date)'
-                            'VALUES (?,?,?,?,?)', (gname, gprice_old, gprice_dis, gmarket, g_add_date,))
+                con.execute('INSERT INTO EDADEAL_GOODS (name,price_old,price_dis,market,add_date,city)'
+                            'VALUES (?,?,?,?,?,?)', (gname, gprice_old, gprice_dis, gmarket, g_add_date, city))
                 sqlite_connection.commit()
                 row_count = con.execute("SELECT COUNT(*) FROM EDADEAL_GOODS").fetchone()[0]
                 print("Строка", row_count, "добавлена")
